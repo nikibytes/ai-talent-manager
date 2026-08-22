@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "groundwork": {
+      "source": "nikibytes/groundwork",
+      "ref": "v0.1",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "c54a60916d84b1909175aa39428e61ec4fed7398799f932fe46947f8e3719766"
+    }
+  }
+}

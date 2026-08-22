@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Next.js & Build Output
+.next/
+out/
+build/
+dist/
+
+# Environment Variables & Secrets (CRITICAL)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# SQLite Database & Local State
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+dev.db
+
+# Logs & Temp Files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Agent Workspace Directory
+.agents/
+COMMIT_PLAN.md
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
