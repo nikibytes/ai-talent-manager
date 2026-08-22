@@ -1,0 +1,37 @@
+planning:
+  mode: active
+  current_stage: database-schema
+  implementation_ready: true
+  stages:
+    discovery:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T19:52:42Z
+    prd:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T19:57:42Z
+    personas:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T20:02:53Z
+    user-flows:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T20:04:19Z
+    requirements:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T20:06:27Z
+    domain-model:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T20:06:27Z
+    data-flow:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T20:06:27Z
+    database-schema:
+      status: LOCKED
+      version: 1
+      approved_at: 2026-08-22T20:06:27Z
