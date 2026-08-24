@@ -2,7 +2,7 @@ name: Auto PR
 
 on:
   push:
-    branches-ignore: [main]
+    branches-ignore: [master]
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          gh pr create --base main --head "${{ github.ref_name }}" \
+          gh pr create --base master --head "${{ github.ref_name }}" \
             --title "PR: ${{ github.ref_name }}" \
             --body "Auto-created on push." || echo "PR already exists"
         env:
