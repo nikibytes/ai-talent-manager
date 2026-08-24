@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
+const contains = (source, value) => assert.ok(source.includes(value), `Expected source to contain: ${value}`);
 
 const page = read('app/page.tsx');
 const queuePage = read('app/pages/QueuePage.tsx');
@@ -13,122 +14,36 @@ const settingsPage = read('app/pages/SettingsPage.tsx');
 const data = read('app/shared/data.ts');
 
 test('DASH-001 sidebar exposes every dashboard page', () => {
-  for (const label of [
-    'Overview',
-    'Opportunity Queue',
-    'Applications',
-    'Approvals',
-    'Content',
-    'Settings',
-  ]) {
-    assert.match(page, new RegExp(label));
-  }
-
-  for (const component of [
-    'Overview',
-    'QueuePage',
-    'ApplicationsPage',
-    'ApprovalsPage',
-    'ContentPage',
-    'SettingsPage',
-  ]) {
-    assert.match(page, new RegExp(`<${component}`));
-  }
+  for (const label of ['Overview', 'Opportunity Queue', 'Applications', 'Approvals', 'Content', 'Settings']) contains(page, label);
+  for (const component of ['Overview', 'QueuePage', 'ApplicationsPage', 'ApprovalsPage', 'ContentPage', 'SettingsPage']) contains(page, `<${component}`);
 });
 
 test('DASH-001 opportunity queue page exposes filtering and search UI', () => {
-  assert.match(queuePage, /Opportunity Queue/);
-  assert.match(queuePage, /Review and prioritize qualifying roles/);
-  assert.match(queuePage, /All/);
-  assert.match(queuePage, /Ready/);
-  assert.match(queuePage, /Review/);
-  assert.match(queuePage, /Search roles or companies/);
-  assert.match(queuePage, /Opportunity/);
-  assert.match(queuePage, /Fit/);
-  assert.match(queuePage, /Status/);
-  assert.match(queuePage, /Source/);
-  assert.match(queuePage, /Posted/);
+  for (const value of ['Opportunity Queue', 'Review and prioritize qualifying roles', 'All', 'Ready', 'Review', 'Search roles or companies', 'Opportunity', 'Fit', 'Status', 'Source', 'Posted']) contains(queuePage, value);
 });
 
 test('DASH-001 applications page exposes pipeline controls and row actions', () => {
-  assert.match(applicationsPage, /Applications/);
-  assert.match(applicationsPage, /Export view/);
-  assert.match(applicationsPage, /Active/);
-  assert.match(applicationsPage, /Interviews/);
-  assert.match(applicationsPage, /Response rate/);
-  assert.match(applicationsPage, /Application pipeline/);
-  assert.match(applicationsPage, /Draft/);
-  assert.match(applicationsPage, /Applied/);
-  assert.match(applicationsPage, /Interview/);
-  assert.match(applicationsPage, /Edit manually/);
-  assert.match(applicationsPage, /View Details/);
-  assert.match(applicationsPage, /Delete/);
+  for (const value of ['Applications', 'Export view', 'Active', 'Interviews', 'Response rate', 'Application pipeline', 'Draft', 'Applied', 'Interview', 'Edit manually', 'View Details', 'Delete']) contains(applicationsPage, value);
 });
 
 test('DASH-001 approvals page exposes review actions and empty state', () => {
-  assert.match(approvalsPage, /Approval Center/);
-  assert.match(approvalsPage, /Approvals/);
-  assert.match(approvalsPage, /Review proposed external actions/);
-  assert.match(approvalsPage, /Reject/);
-  assert.match(approvalsPage, /Approve/);
-  assert.match(approvalsPage, /All caught up/);
-  assert.match(approvalsPage, /No pending approvals in the mock queue/);
+  for (const value of ['Approval Center', 'Approvals', 'Review proposed external actions', 'Reject', 'Approve', 'All caught up', 'No pending approvals in the mock queue']) contains(approvalsPage, value);
 });
 
 test('DASH-001 content page exposes LinkedIn content workflow', () => {
-  assert.match(contentPage, /LinkedIn Content/);
-  assert.match(contentPage, /Draft, review and schedule professional posts/);
-  assert.match(contentPage, /\+ New draft/);
-  assert.match(contentPage, /Needs approval/);
-  assert.match(contentPage, /Scheduled/);
-  assert.match(contentPage, /Draft/);
-  assert.match(contentPage, /Edit/);
-  assert.match(contentPage, /Review/);
+  for (const value of ['LinkedIn Content', 'Draft, review and schedule professional posts', '+ New draft', 'Needs approval', 'Scheduled', 'Draft', 'Edit', 'Review']) contains(contentPage, value);
 });
 
 test('DASH-001 settings page exposes execution, target, schedule and notifications controls', () => {
-  assert.match(settingsPage, /Control Center Settings/);
-  assert.match(settingsPage, /Execution mode/);
-  assert.match(settingsPage, /Manual/);
-  assert.match(settingsPage, /Autonomous/);
-  assert.match(settingsPage, /Daily application target/);
-  assert.match(settingsPage, /Daily run schedule/);
-  assert.match(settingsPage, /10:00/);
-  assert.match(settingsPage, /AM/);
-  assert.match(settingsPage, /PM/);
-  assert.match(settingsPage, /Asia\/Kolkata/);
-  assert.match(settingsPage, /America\/Los_Angeles/);
-  assert.match(settingsPage, /UTC/);
-  assert.match(settingsPage, /Notifications/);
-  assert.match(settingsPage, /EOD report email/);
-  assert.match(settingsPage, /Approval alerts/);
-  assert.match(settingsPage, /Save Changes/);
+  for (const value of ['Control Center Settings', 'Execution mode', 'Manual', 'Autonomous', 'Daily application target', 'Daily run schedule', '10:00', 'AM', 'PM', 'Asia/Kolkata', 'America/Los_Angeles', 'UTC', 'Notifications', 'EOD report email', 'Approval alerts', 'Save Changes']) contains(settingsPage, value);
 });
 
 test('DASH-001 dashboard mock data covers each new page', () => {
-  assert.match(data, /export const queue/);
-  assert.match(data, /export const applications/);
-  assert.match(data, /export const approvals/);
-  assert.match(data, /export const posts/);
-  assert.match(data, /Opportunity Queue/);
-  assert.match(data, /Senior Backend Engineer/);
-  assert.match(data, /AI engineering job-search update/);
+  for (const value of ['export const queue', 'export const applications', 'export const approvals', 'export const posts', 'Opportunity Queue', 'Senior Backend Engineer', 'AI engineering job-search update']) contains(data, value);
 });
 
 test('DASH-001 remains frontend-only', () => {
-  const frontendSources = [
-    page,
-    queuePage,
-    applicationsPage,
-    approvalsPage,
-    contentPage,
-    settingsPage,
-    data,
-  ].join('\n');
-
-  assert.doesNotMatch(
-    frontendSources,
-    /from ['\"](?:@\/)?(?:src\/)?(?:db|database)[^'\"]*['\"]/i,
-  );
+  const frontendSources = [page, queuePage, applicationsPage, approvalsPage, contentPage, settingsPage, data].join('\n');
+  assert.doesNotMatch(frontendSources, /from ['\"](?:@\/)?(?:src\/)?(?:db|database)[^'\"]*['\"]/i);
   assert.doesNotMatch(frontendSources, /drizzle|sqlite|prisma|supabase/i);
 });
