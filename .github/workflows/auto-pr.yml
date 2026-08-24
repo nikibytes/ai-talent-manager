@@ -1,0 +1,21 @@
+name: Auto PR
+
+on:
+  push:
+    branches-ignore: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          gh pr create --base master --head "${{ github.ref_name }}" \
+            --title "PR: ${{ github.ref_name }}" \
+            --body "Auto-created on push." || echo "PR already exists"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
