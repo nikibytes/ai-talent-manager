@@ -28,7 +28,6 @@
   - [ ] Factual CV tailoring engine & `cv_versions` history tracker (`src/generator/cv/`)
   - [ ] Application answers generator & factual validation check (`src/generator/application-answers/`, `src/validation/`)
 - [ ] Submission Automation & Browser Runner
-  - [ ] Control Dashboard UI for inspecting pending execution requests & queue (`src/app/dashboard/`)
   - [ ] Browser Use automation runner for Easy Apply form submission (`src/automation/browser-use/`)
 
 ### Feature 3: Recruiter Outreach & EOD Activity Reporting
@@ -47,7 +46,7 @@
 ---
 
 ## In Progress
-(none yet)
+- [ ] DASH-001_002 — Control Dashboard UI for inspecting pending execution requests & queue (`app/page.tsx`, frontend-only; no database implementation)
 
 ---
 
