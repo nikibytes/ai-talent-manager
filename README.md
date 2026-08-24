@@ -1,4 +1,4 @@
-# AI Talent Manager
+# AI Talent Manager ![CI](https://github.com/nikibytes/ai-talent-manager/actions/workflows/ci.yml/badge.svg)
 
 AI-assisted talent operations dashboard for managing the recruiting workflow from candidate intake through applications, approvals, content, and settings.
 
