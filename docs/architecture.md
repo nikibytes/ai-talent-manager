@@ -1,100 +1,77 @@
 # Architecture — ai-talent-manager
 
+## Architectural Source of Truth
+
+- `docs/planning/` contains the **approved planning specification** and locked product/domain decisions.
+- This file is the **implementation-facing consolidated architecture reference**.
+- When implementation introduces a new module, schema, integration, or architectural responsibility, this file and the relevant planning document must be updated in the same commit.
+
 ## Data Flow (high level)
 
-The AI Talent Manager is a single-user, local-first orchestration system that manages the candidate's LinkedIn-focused job search.
-
-The high-level flow is:
+The AI Talent Manager is a single-user, local-first orchestration system for the candidate's LinkedIn-focused job search.
 
 ```text
-10:00 AM Daily Run Trigger (Configurable daily_run_time & timezone)
-        ↓
-Create Daily Run Log Entity
-        ↓
-Inspect Persistent Opportunity Queue (SQLite)
-        ↓
-┌────────────────────────────────────────────────────────┐
-│ Existing Qualifying Jobs >= Daily Target?               │
-│                                                        │
-│ YES → Select Top Match Jobs up to Daily Target Limit   │
-│ NO  → Calculate Remaining Slots Needed                 │
-│       ↓                                                │
-│       Discover Jobs via Agent Reach / LinkedIn APIs    │
-│       (Browser Use NOT used for discovery)             │
-│       ↓                                                │
-│       Deduplicate against Queue + Historical DB        │
-│       ↓                                                │
-│       LLM Matcher & Classifier                         │
-│       ├── Score >= 0.70 → APPLICATION_ELIGIBLE → Queue │
-│       ├── 0.50 - 0.70   → STRETCH → Stretch Log      │
-│       └── Score < 0.50  → NOT_QUALIFIED → Discard      │
-└────────────────────────────────────────────────────────┘
-        ↓
-Select Applications up to Configured Daily Application Target
-(Unselected qualifying opportunities remain in persistent queue for next day)
-        ↓
-Generate Tailored CV Version (Google Drive PDF/DOCX) + Application Answers
-(Validated against Candidate Profile facts)
-        ↓
-Create Application & Execution Request Entity
-        ↓
-Check Action Execution Mode (APPLICATION_EXECUTION_MODE)
-        ↓
-┌────────────────────────────────────────────────────────┐
-│ Execution Mode Gate                                    │
-│                                                        │
-│ MANUAL → Dispatch Approval Request to Approval Service  │
-│          ├── Email Approval Link                       │
-│          └── Dashboard Approval Queue                  │
-│          Candidate Decision → APPROVED / REJECTED      │
-│                                                        │
-│ AUTONOMOUS → Auto-Approve & Pass directly to Executor   │
-└────────────────────────────────────────────────────────┘
-        ↓
-Executor Service (Browser Use for Easy Apply Submissions)
-        ↓
-Record Application History & Update Daily Run Log
-        ↓
-EOD Report Generator → Email Dispatch via SMTP
-
-
-Parallel Recruiter Outreach Flow:
-
-Target Company / Job
-        ↓
-Recruiter Discovery (Agent Reach / LinkedIn)
-        ↓
-AI Personalized DM Draft
-        ↓
-Execution Request (RECRUITER_DM_EXECUTION_MODE)
-        ↓
-Approval Service (Email / Dashboard) → If MANUAL
-        ↓
-Unipile Integration → Send DM
-        ↓
-Recruiter Reply Tracking & Follow-up Lifecycle
-
-
-Parallel Personal Branding Content Flow (~Every 2 Days):
-
-Scheduled Timer / Candidate Activity Log
-        ↓
-AI Content Generator
-        ↓
-Execution Request (LINKEDIN_POST_EXECUTION_MODE)
-        ↓
-Approval Service (Email / Dashboard) → If MANUAL
-        ↓
-LinkedIn Publishing / Scheduling
+Scheduled 10:00 AM Trigger (Configurable time + timezone)
+                 OR
+Manual "Run Now" Trigger
+                 ↓
+        Same Daily Run Orchestrator
+                 ↓
+        Create Daily Run Log
+                 ↓
+   Inspect Persistent Opportunity Queue (SQLite)
+                 ↓
+Calculate Remaining Application Slots
+                 ↓
+Can queue fill the remaining slots?
+        ├── YES → Select highest-priority qualifying jobs
+        └── NO  → Discover additional jobs
+                    ↓
+              Normalize + Deduplicate
+                    ↓
+              Match + Classify
+              ├── Eligible → Queue
+              ├── Stretch  → Stretch Log
+              └── Not Qualified → Discard
+                    ↓
+              Return to queue processing
+                    ↓
+              Tailor CV + Answers
+                    ↓
+              Validate factual consistency
+                    ↓
+              Create Execution Request
+                    ↓
+              Execution Mode Gate
+              ├── MANUAL → Approval Service
+              │             ├── Email preferred
+              │             └── Dashboard fallback
+              │             ↓
+              │          Candidate decision
+              └── AUTONOMOUS → validated executor path
+                    ↓
+              Browser Use / LinkedIn executor
+                    ↓
+              Record outcome + exact CV version
+                    ↓
+              Remaining slots?
+              ├── YES → return to queue processing
+              └── NO  → preserve leftovers → EOD report
 ```
 
-- **Opportunity Queue**: The opportunity queue is persistent. If the agent discovers more suitable jobs than the configured daily application limit, the unused opportunities remain queued for the next day.
-- **Queue-First Execution**: At the beginning of each daily run (10:00 AM), the agent processes the existing queue first. It only performs additional discovery when the queue cannot provide enough qualifying opportunities to meet the configured daily target.
-- **Stretch Classification**: Jobs scoring between `stretch_match_threshold` (`0.50`) and `normal_match_threshold` (`0.70`) are logged for candidate insight and EOD reporting rather than applied or silently dropped.
-- **Channel-Agnostic Approval**: All external actions create `Execution Requests` evaluated by the `Approval Service` serving both Email action links and Next.js Dashboard. Execution modes (`MANUAL` | `AUTONOMOUS`) are configurable per action type.
-- **Factual Integrity**: The AI acts as a transparent talent manager/representative for the candidate. It must not impersonate the candidate or fabricate candidate experience, skills, achievements, or other professional information.
+### Runtime guarantees
 
----
+- Queue-first: existing qualifying opportunities are processed before unnecessary discovery.
+- Conditional discovery: fresh discovery happens only when the queue cannot fill remaining application slots.
+- Repeat-until-target: discovery, matching, queueing, tailoring and execution repeat until the daily target is reached or qualifying work is exhausted.
+- Persistent leftovers: unused qualifying opportunities remain queued for later runs.
+- Stretch opportunities are retained/reported and do not get used merely to pad the application target.
+- Scheduled and manual triggers use the exact same orchestrator.
+- The three consequential action types have independent execution modes:
+  - `APPLICATION_EXECUTION_MODE`
+  - `RECRUITER_DM_EXECUTION_MODE`
+  - `LINKEDIN_POST_EXECUTION_MODE`
+- All default to `MANUAL` during initial validation.
 
 ## Directory Map
 
@@ -168,98 +145,99 @@ ai-talent-manager/
 └── README.md
 ```
 
----
-
 ## Schemas
 
 The database is SQLite with Drizzle ORM.
 
 Primary schema/model file: `src/db/schema.ts`
-- Candidate & agent config: `agent_settings` table
-- Jobs: `jobs` table (`match_classification`: `APPLICATION_ELIGIBLE`, `STRETCH`, `NOT_QUALIFIED`)
-- Opportunity queue: `opportunity_queue` table
-- CV versions: `cv_versions` table (references Google Drive file ID & content diff)
-- Applications: `applications` table (`status`: `DRAFT`, `PENDING_APPROVAL`, `APPROVED`, `REJECTED`, `SUBMITTING`, `SUBMITTED`, `FAILED`)
-- Recruiters: `recruiters` table
-- Messages & follow-ups: `recruiter_messages` table
-- Content posts: `linkedin_posts` table
-- Execution requests: `execution_requests` table
-- Approval audit trail: `approval_events` table
-- Daily runs: `daily_runs` table
 
----
+The planning specification for intent and relationships is `docs/planning/database-schema.md`. The implementation schema file is authoritative for actual columns/types once coding begins.
+
+Core entities:
+- Candidate/agent configuration: `agent_settings`
+- Jobs and opportunity queue: `jobs`, `opportunity_queue`
+- Tailored CV versions and applications: `cv_versions`, `applications`
+- Recruiters and messages/follow-ups: `recruiters`, `recruiter_messages`
+- LinkedIn content: `linkedin_posts`
+- Execution and approval audit: `execution_requests`, `approval_events`
+- Daily runs: `daily_runs`
 
 ## Key Modules
 
 | Module | Path | Responsibility |
 |---|---|---|
-| **Agent Orchestrator** | `src/agent/orchestrator/` | Coordinates discovery, matching, queue processing, applications, outreach, content, and reporting |
-| **Daily Run** | `src/agent/daily-run/` | Executes the 10:00 AM daily job-search cycle and respects the configured application target |
-| **Decision Engine** | `src/agent/decision-engine/` | Decides which opportunities should be applied to, queued, categorized as stretch, or rejected |
-| **Approval Service** | `src/approval/` | Manages `Execution Requests`, handles channel-agnostic approval via Email & Dashboard, and respects `MANUAL`/`AUTONOMOUS` mode switches |
-| **Job Discovery** | `src/discovery/` | Retrieves relevant LinkedIn job listings from Agent Reach / supported discovery sources |
-| **Normalization & Deduplication** | `src/discovery/normalization/`, `src/discovery/deduplication/` | Converts external job listings and deduplicates against active queue + historical DB records |
-| **Matcher & Classifier** | `src/discovery/matcher/` | Evaluates job compatibility against candidate profile facts and `0.50`/`0.70` thresholds |
-| **Opportunity Queue** | `src/queue/opportunity-queue/` | Persists useful undispatched opportunities for future daily runs |
-| **Candidate Profile** | `src/candidate/profile/` | Maintains verified candidate facts used by the agent |
-| **CV Generator & Versioning** | `src/generator/cv/` | Creates tailored CV versions for each selected job without fabricating candidate information |
-| **Application Validation** | `src/validation/` | Checks tailored CVs and application answers for factual consistency before use |
-| **Browser Automation** | `src/automation/browser-use/` | Uses Browser Use to navigate forms, upload CVs, and execute approved browser-based applications |
-| **Unipile Integration** | `src/linkedin/unipile/` | Handles supported LinkedIn operations such as messaging and recruiter outreach |
-| **Messaging & Follow-ups** | `src/linkedin/messaging/` | Generates, queues, tracks, and sends approved recruiter outreach and follow-ups |
-| **Content** | `src/linkedin/content/` | Generates LinkedIn posts approximately every two days for human approval |
-| **Google Drive** | `src/drive/google-drive/` | Stores master CVs, tailored CVs, application documents, and reports |
-| **EOD Reporting** | `src/reporting/eod/` | Generates and sends the daily activity report via Email/SMTP |
-| **Database** | `src/db/` | Provides SQLite persistence, schema, migrations, and database access |
-| **Dashboard** | `src/app/dashboard/` | Provides the candidate with configuration, queues, drafts, approvals, and application visibility |
-
----
+| **Agent Orchestrator** | `src/agent/orchestrator/` | Coordinates the daily run and shared agent workflows |
+| **Daily Run** | `src/agent/daily-run/` | Executes scheduled/manual daily runs and tracks remaining target capacity |
+| **Decision Engine** | `src/agent/decision-engine/` | Selects opportunities and enforces classification/target decisions |
+| **Approval Service** | `src/approval/` | Provides one approval abstraction for Email and Dashboard and respects execution modes |
+| **Job Discovery** | `src/discovery/` | Retrieves LinkedIn job opportunities from supported discovery sources |
+| **Normalization & Deduplication** | `src/discovery/normalization/`, `src/discovery/deduplication/` | Normalizes external listings and deduplicates against queue/history |
+| **Matcher & Classifier** | `src/discovery/matcher/` | Evaluates fit and classifies eligible/stretch/not-qualified opportunities |
+| **Opportunity Queue** | `src/queue/opportunity-queue/` | Persists qualifying unused opportunities for future runs |
+| **Candidate Profile** | `src/candidate/profile/` | Maintains verified candidate facts |
+| **CV Generator & Versioning** | `src/generator/cv/` | Creates job-specific CV versions without fabricating facts |
+| **Application Validation** | `src/validation/` | Checks factual and application consistency |
+| **Browser Automation** | `src/automation/browser-use/` | Executes approved browser-based application actions |
+| **Unipile Integration** | `src/linkedin/unipile/` | Handles supported LinkedIn messaging/operations |
+| **Messaging & Follow-ups** | `src/linkedin/messaging/` | Drafts, queues, tracks and executes recruiter outreach according to mode |
+| **Content** | `src/linkedin/content/` | Generates LinkedIn posts approximately every two days |
+| **Google Drive** | `src/drive/google-drive/` | Stores master/tailored CVs and application documents |
+| **EOD Reporting** | `src/reporting/eod/` | Generates and sends daily reports |
+| **Database** | `src/db/` | SQLite persistence, schema, migrations and access |
+| **Dashboard** | `src/app/dashboard/` | Candidate configuration, queues, drafts, approvals and visibility |
 
 ## External Dependencies
 
 ### LinkedIn / Job Discovery
-- **Agent Reach**: Primary job discovery/crawling integration.
-- **Unipile**: LinkedIn integration for supported recruiter messaging and LinkedIn operations.
-- **Browser Use**: Browser automation for application forms and LinkedIn actions that cannot be handled through structured integrations.
-  *(Note: Browser Use is used as an execution layer rather than as the primary source of application/business decisions.)*
+- **Agent Reach**: Primary discovery/crawling integration.
+- **Unipile**: Supported LinkedIn operations, especially recruiter messaging.
+- **Browser Use**: Browser execution layer for application forms and other approved browser actions; not the primary job-discovery source.
 
 ### AI / LLM
-The system supports configurable LLM providers (OpenAI / Anthropic / Gemini). LLMs are used for:
-- Job requirement extraction & matching
-- CV tailoring & application-answer generation
-- Recruiter message & response drafting
-- LinkedIn content generation & summarization
+The system supports configurable LLM providers (OpenAI / Anthropic / Gemini) for matching, CV tailoring, application answers, recruiter drafting, and LinkedIn content generation.
 
 ### Document Storage & Communication
-- **Google Drive API**: Persistent storage for generated CV PDFs/DOCX files, application documents, and reports.
-- **SMTP / Email API**: Sends EOD activity reports, notifications, and email-based action approval links.
+- **Google Drive API**: Stores generated CVs and application documents.
+- **SMTP / Email API**: EOD reports, notifications and preferred approval channel.
 
 ### Database
-- **SQLite**: Primary application state, opportunity queue, configuration, application history, recruiter activity, content drafts, execution requests, and audit events.
-- **Drizzle ORM**: Schema definition, migrations, and database client access.
+- **SQLite**: Application state, queue, configuration, history, execution requests and audit events.
+- **Drizzle ORM**: Schema, migrations and database access.
 
----
+## Security Architecture
+
+Security is a cross-cutting requirement, not a later hardening task.
+
+- No secrets, API keys, OAuth tokens, session data or credentials in source control or logs.
+- No LinkedIn password storage.
+- Least-privilege integration scopes.
+- Sensitive persisted credentials/tokens protected and encrypted where applicable.
+- External content and LLM output treated as untrusted input.
+- Approval links use scoped, expiring, cryptographically random single-use tokens where feasible.
+- Consequential actions use idempotency/duplicate protection.
+- Browser automation uses minimum required access and isolated session context.
+- Ambiguous authorization/validation states fail closed.
+- The agent cannot change its own permissions, security configuration or execution modes.
+- All consequential actions have auditable execution/approval history without leaking secrets.
 
 ## Update Rule & Separation of Responsibilities
 
-This file is updated by the agent whenever a new module, schema, or external dependency is added — same commit as the code change, never deferred.
-
-Any architectural change must preserve the strict separation of responsibilities:
+This file is updated in the same commit whenever a module, schema, external dependency, or architectural responsibility changes.
 
 ```text
 AI Talent Manager    = DECIDES / ORCHESTRATES
 Agent Reach          = DISCOVERS JOBS
-Matcher              = EVALUATES FIT & CLASSIFIES (ELIGIBLE / STRETCH / NOT QUALIFIED)
+Matcher              = EVALUATES FIT & CLASSIFIES
 Opportunity Queue    = PRESERVES QUALIFYING UNUSED OPPORTUNITIES
-CV Generator         = TAILORS CANDIDATE MATERIAL & VERSIONS CVs
+CV Generator         = TAILORS & VERSIONS CVs
 Validator            = CHECKS FACTUAL / APPLICATION CONSISTENCY
-Approval Service     = EVALUATES EXECUTION REQUESTS & DISPATCHES APPROVALS (EMAIL / DASHBOARD)
+Approval Service     = HANDLES EXECUTION REQUESTS + EMAIL/DASHBOARD APPROVAL
 Browser Use          = EXECUTES BROWSER ACTIONS
 Unipile              = HANDLES SUPPORTED LINKEDIN OPERATIONS
 Google Drive         = STORES DOCUMENTS
 SQLite               = STORES SYSTEM STATE, QUEUE, AUDIT & HISTORY
-Email                = REPORTS ACTIVITY & DELIVERS APPROVAL REQUESTS
-Human Candidate      = CONTROLS SETTINGS & APPROVES ACTIONS IN MANUAL MODE
+Email                = REPORTS ACTIVITY + DELIVERS APPROVAL REQUESTS
+Human Candidate      = CONTROLS SETTINGS + APPROVES ACTIONS IN MANUAL MODE
 ```
 
-No module should silently absorb another module's responsibility without updating this document in the same commit.
+No module should silently absorb another module's responsibility without updating the relevant architecture/planning documentation in the same commit.
