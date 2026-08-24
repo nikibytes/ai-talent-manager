@@ -1,26 +1,27 @@
 ---
 status: LOCKED
-version: 2
+version: 3
 approved_by: human
-approved_at: 2026-08-23T02:53:14Z
+approved_at: 2026-08-24T19:20:00+05:30
 ---
 
 # Database Schema Specification — ai-talent-manager
 
-SQLite Database Schema defined via Drizzle ORM (`src/db/schema.ts`):
+SQLite Database Schema defined via Drizzle ORM (`src/db/schema.ts`).
 
 ## 1. Candidate & System Configuration (`agent_settings`)
 - `id` (text, primary key)
 - `candidate_name` (text)
 - `candidate_email` (text)
 - `daily_run_time` (text, default `'10:00'`)
-- `timezone` (text, default `'UTC'`)
-- `daily_application_target` (integer, default `5`)
+- `timezone` (text, default to configured deployment/user timezone; explicit configuration required rather than assuming UTC)
+- `daily_application_target` (integer, configurable)
 - `normal_match_threshold` (real, default `0.70`)
 - `stretch_match_threshold` (real, default `0.50`)
 - `application_execution_mode` (text, `'MANUAL'` | `'AUTONOMOUS'`, default `'MANUAL'`)
 - `recruiter_dm_execution_mode` (text, `'MANUAL'` | `'AUTONOMOUS'`, default `'MANUAL'`)
 - `linkedin_post_execution_mode` (text, `'MANUAL'` | `'AUTONOMOUS'`, default `'MANUAL'`)
+- `manual_trigger_enabled` (boolean, default `true`)
 
 ## 2. Jobs & Opportunity Queue (`jobs`, `opportunity_queue`)
 - **`jobs`**:
@@ -85,6 +86,8 @@ SQLite Database Schema defined via Drizzle ORM (`src/db/schema.ts`):
   - `execution_mode` (text: `'MANUAL'`, `'AUTONOMOUS'`)
   - `status` (text: `'PENDING_APPROVAL'`, `'APPROVED'`, `'REJECTED'`, `'EXECUTED'`, `'FAILED'`)
   - `requested_at` (timestamp)
+  - `idempotency_key` (text, unique where applicable)
+  - `expires_at` (timestamp, for pending approval requests)
 - **`approval_events`**:
   - `id` (text, primary key)
   - `execution_request_id` (text, foreign key → `execution_requests.id`)
@@ -97,6 +100,7 @@ SQLite Database Schema defined via Drizzle ORM (`src/db/schema.ts`):
 ## 7. Daily Execution Runs (`daily_runs`)
 - `id` (text, primary key)
 - `run_date` (text)
+- `trigger_type` (text: `'SCHEDULED'`, `'MANUAL'`)
 - `started_at` (timestamp)
 - `completed_at` (timestamp)
 - `daily_target` (integer)
@@ -105,3 +109,10 @@ SQLite Database Schema defined via Drizzle ORM (`src/db/schema.ts`):
 - `applications_submitted` (integer)
 - `stretch_jobs_logged` (integer)
 - `status` (text: `'RUNNING'`, `'COMPLETED'`, `'FAILED'`)
+
+## Schema Intent Notes
+- `agent_settings` stores candidate-controlled runtime behavior; execution modes are configuration, not agent-owned state.
+- `execution_requests` provides one common lifecycle for application submission, recruiter DM dispatch, and LinkedIn publication.
+- `approval_events` is an immutable-style audit history of decisions and channels; email and dashboard approvals operate on the same request.
+- `idempotency_key` and `expires_at` support duplicate protection and expiring approval actions.
+- `daily_runs.trigger_type` distinguishes scheduled production behavior from manual testing without creating a separate workflow.
