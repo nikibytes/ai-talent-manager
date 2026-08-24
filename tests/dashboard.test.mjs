@@ -14,7 +14,7 @@ const settingsPage = read('app/pages/SettingsPage.tsx');
 const data = read('app/shared/data.ts');
 
 test('DASH-001 sidebar exposes every dashboard page', () => {
-  for (const label of ['Overview', 'Opportunity Queue', 'Applications', 'Approvals', 'Content', 'Settings']) contains(page, label);
+  for (const label of ['Overview', 'Opportunity Queue', 'Applications', 'Approvals', 'Content', 'Settings']) contains(data, label);
   for (const component of ['Overview', 'QueuePage', 'ApplicationsPage', 'ApprovalsPage', 'ContentPage', 'SettingsPage']) contains(page, `<${component}`);
 });
 
@@ -27,11 +27,12 @@ test('DASH-001 applications page exposes pipeline controls and row actions', () 
 });
 
 test('DASH-001 approvals page exposes review actions and empty state', () => {
-  for (const value of ['Approval Center', 'Approvals', 'Review proposed external actions', 'Reject', 'Approve', 'All caught up', 'No pending approvals in the mock queue']) contains(approvalsPage, value);
+  for (const value of ['APPROVAL CENTER', 'Approvals', 'Review proposed external actions', 'Reject', 'Approve', 'All caught up', 'No pending approvals in the mock queue']) contains(approvalsPage, value);
 });
 
 test('DASH-001 content page exposes LinkedIn content workflow', () => {
-  for (const value of ['LinkedIn Content', 'Draft, review and schedule professional posts', '+ New draft', 'Needs approval', 'Scheduled', 'Draft', 'Edit', 'Review']) contains(contentPage, value);
+  for (const value of ['LinkedIn Content', 'Draft, review and schedule professional posts', '+ New draft', 'Edit', 'Review']) contains(contentPage, value);
+  for (const value of ['Needs approval', 'Scheduled', 'Draft']) contains(data, value);
 });
 
 test('DASH-001 settings page exposes execution, target, schedule and notifications controls', () => {
