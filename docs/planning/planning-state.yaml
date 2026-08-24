@@ -1,37 +1,56 @@
 planning:
   mode: active
-  current_stage: database-schema
+  current_stage: implementation-ready
   implementation_ready: true
+  locked_baseline_version: 3
+  execution_modes:
+    application_submission: MANUAL
+    recruiter_dm: MANUAL
+    linkedin_post: MANUAL
+  default_daily_run_time: "10:00"
+  timezone: configured_user_or_deployment_timezone
+  manual_trigger_enabled: true
   stages:
     discovery:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T19:52:42Z
+      version: 2
+      approved_at: 2026-08-24T19:20:00+05:30
     prd:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T19:57:42Z
+      version: 2
+      approved_at: 2026-08-24T19:20:00+05:30
     personas:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T20:02:53Z
+      version: 2
+      approved_at: 2026-08-24T19:20:00+05:30
     user-flows:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T20:04:19Z
+      version: 2
+      approved_at: 2026-08-24T19:20:00+05:30
     requirements:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T20:06:27Z
+      version: 2
+      approved_at: 2026-08-24T19:20:00+05:30
     domain-model:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T20:06:27Z
+      version: 3
+      approved_at: 2026-08-24T19:20:00+05:30
     data-flow:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T20:06:27Z
+      version: 3
+      approved_at: 2026-08-24T19:20:00+05:30
     database-schema:
       status: LOCKED
-      version: 1
-      approved_at: 2026-08-22T20:06:27Z
+      version: 3
+      approved_at: 2026-08-24T19:20:00+05:30
+
+  security_baseline:
+    secrets_never_committed: true
+    least_privilege_integrations: true
+    no_linkedin_password_storage: true
+    llm_output_untrusted: true
+    approval_tokens_expiring_and_single_use_where_feasible: true
+    consequential_actions_idempotent: true
+    fail_closed: true
+    agent_cannot_self_enable_autonomy: true
+    agent_cannot_modify_permissions: true
