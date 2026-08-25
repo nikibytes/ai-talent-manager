@@ -4,7 +4,6 @@
 
 ### Foundation & Core Infrastructure
 - [ ] Database & Core Configuration
-  - [ ] Complete database schema definition for settings, jobs, queue, cv_versions, applications, recruiters, messages, posts, execution_requests, approval_events, and daily_runs (`src/db/schema.ts`)
   - [ ] Candidate profile store for verified facts (`src/candidate/profile/`)
   - [ ] Config loader for daily run time/timezone, daily target, thresholds, manual trigger, and per-action execution modes (`src/config/`)
 - [ ] Execution Request & Channel-Agnostic Approval Service
@@ -20,11 +19,11 @@
 
 ## In Progress
 - [ ] Database & Core Configuration — SQLite database setup, Drizzle ORM client, and migration scripts (`src/db/`)
-- [ ] Database & Core Configuration — Candidate/system configuration and jobs/opportunity queue schema (`src/db/schema.ts`)
 - [ ] DASH-001_002 — Control Dashboard UI for inspecting pending execution requests & queue (`app/page.tsx`, frontend-only; no database implementation)
 
 ## Completed
-(none yet)
+- [x] Database & Core Configuration — Candidate/system configuration and jobs/opportunity queue schema (`src/db/schema.ts`)
+- [x] Database & Core Configuration — Complete database schema definition for settings, jobs, queue, cv_versions, applications, recruiters, messages, posts, execution_requests, approval_events, and daily_runs (`src/db/schema.ts`)
 
 ## Rules
 - Agent moves an item `Backlog` → `In Progress` before starting work on it, `In Progress` → `Completed` only after tests pass.
