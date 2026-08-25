@@ -162,6 +162,16 @@ Core entities:
 - Execution and approval audit: `execution_requests`, `approval_events`
 - Daily runs: `daily_runs`
 
+## Database Implementation
+
+- SQLite is the local persistence layer.
+- Drizzle ORM owns schema definitions, migration generation, migration application, and typed database access.
+- `src/db/client.ts` initializes the Drizzle client through `better-sqlite3`.
+- `drizzle.config.ts` is the Drizzle Kit configuration and targets `src/db/schema.ts` with migrations under `src/db/migrations/`.
+- `DB_FILE_NAME` selects the local SQLite file and defaults to `./data/ai-talent-manager.db` for local development.
+- Migration workflow is exposed through `npm run db:generate`, `npm run db:migrate`, and `npm run db:studio`.
+- The current database setup intentionally does not define feature tables; those are implemented incrementally from `docs/planning/database-schema.md`.
+
 ## Key Modules
 
 | Module | Path | Responsibility |
@@ -203,6 +213,7 @@ The system supports configurable LLM providers (OpenAI / Anthropic / Gemini) for
 ### Database
 - **SQLite**: Application state, queue, configuration, history, execution requests and audit events.
 - **Drizzle ORM**: Schema, migrations and database access.
+- **better-sqlite3**: Node.js SQLite driver used by the Drizzle client.
 
 ## Security Architecture
 
