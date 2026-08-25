@@ -170,7 +170,7 @@ Core entities:
 - `drizzle.config.ts` is the Drizzle Kit configuration and targets `src/db/schema.ts` with migrations under `src/db/migrations/`.
 - `DB_FILE_NAME` selects the local SQLite file and defaults to `./data/ai-talent-manager.db` for local development.
 - Migration workflow is exposed through `npm run db:generate`, `npm run db:migrate`, and `npm run db:studio`.
-- The current database setup intentionally does not define feature tables; those are implemented incrementally from `docs/planning/database-schema.md`.
+- The implementation schema and additive migrations cover the locked entities in `docs/planning/database-schema.md`.
 
 ## Key Modules
 
