@@ -20,6 +20,7 @@
 
 ## In Progress
 - [ ] Database & Core Configuration — SQLite database setup, Drizzle ORM client, and migration scripts (`src/db/`)
+- [ ] Database & Core Configuration — Candidate/system configuration and jobs/opportunity queue schema (`src/db/schema.ts`)
 - [ ] DASH-001_002 — Control Dashboard UI for inspecting pending execution requests & queue (`app/page.tsx`, frontend-only; no database implementation)
 
 ## Completed
