@@ -17,6 +17,9 @@
   - [ ] Input validation, fail-closed authorization, audit logging, and safe error handling
   - [ ] Agent permission allowlist preventing self-modification of execution/security configuration
 
+### Agent & Discovery
+- [ ] Central Talent Agent — Agent Reach LinkedIn discovery boundary for job search and job-detail retrieval (`src/agent/orchestrator/talent-agent.ts`, `src/discovery/agent-reach/client.ts`)
+
 ## In Progress
 - [ ] Database & Core Configuration — SQLite database setup, Drizzle ORM client, and migration scripts (`src/db/`)
 - [ ] DASH-001_002 — Control Dashboard UI for inspecting pending execution requests & queue (`app/page.tsx`, frontend-only; no database implementation)

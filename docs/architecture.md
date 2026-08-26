@@ -176,11 +176,13 @@ Core entities:
 
 | Module | Path | Responsibility |
 |---|---|---|
+| **Central Talent Agent** | `src/agent/orchestrator/talent-agent.ts` | Main application agent boundary; delegates external job discovery to the Agent Reach LinkedIn adapter and will later coordinate matching, tailoring, approvals and execution |
 | **Agent Orchestrator** | `src/agent/orchestrator/` | Coordinates the daily run and shared agent workflows |
 | **Daily Run** | `src/agent/daily-run/` | Executes scheduled/manual daily runs and tracks remaining target capacity |
 | **Decision Engine** | `src/agent/decision-engine/` | Selects opportunities and enforces classification/target decisions |
 | **Approval Service** | `src/approval/` | Provides one approval abstraction for Email and Dashboard and respects execution modes |
 | **Job Discovery** | `src/discovery/` | Retrieves LinkedIn job opportunities from supported discovery sources |
+| **Agent Reach LinkedIn Adapter** | `src/discovery/agent-reach/client.ts` | Calls the configured Agent Reach/LinkedIn MCP server through `mcporter` for job search and job-detail retrieval; keeps MCP transport concerns outside the Talent Agent |
 | **Normalization & Deduplication** | `src/discovery/normalization/`, `src/discovery/deduplication/` | Normalizes external listings and deduplicates against queue/history |
 | **Matcher & Classifier** | `src/discovery/matcher/` | Evaluates fit and classifies eligible/stretch/not-qualified opportunities |
 | **Opportunity Queue** | `src/queue/opportunity-queue/` | Persists qualifying unused opportunities for future runs |
@@ -199,7 +201,7 @@ Core entities:
 ## External Dependencies
 
 ### LinkedIn / Job Discovery
-- **Agent Reach**: Primary discovery/crawling integration.
+- **Agent Reach**: Primary discovery/crawling integration. Its LinkedIn capability is consumed through the configured LinkedIn MCP server.
 - **Unipile**: Supported LinkedIn operations, especially recruiter messaging.
 - **Browser Use**: Browser execution layer for application forms and other approved browser actions; not the primary job-discovery source.
 
@@ -238,6 +240,7 @@ This file is updated in the same commit whenever a module, schema, external depe
 ```text
 AI Talent Manager    = DECIDES / ORCHESTRATES
 Agent Reach          = DISCOVERS JOBS
+Agent Reach Adapter  = TRANSLATES Talent Agent calls to LinkedIn MCP
 Matcher              = EVALUATES FIT & CLASSIFIES
 Opportunity Queue    = PRESERVES QUALIFYING UNUSED OPPORTUNITIES
 CV Generator         = TAILORS & VERSIONS CVs
